@@ -25,3 +25,9 @@ func (m *SafeMap) Get(k interface{}) (interface{}, bool) {
 	m.RUnlock()
 	return v, ok
 }
+
+func (m *SafeMap) Delete(k interface{}) {
+	m.Lock()
+	delete(m.data, k)
+	m.Unlock()
+}

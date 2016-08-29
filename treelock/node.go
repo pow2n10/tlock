@@ -35,3 +35,7 @@ func (node *Node) Get(name string) (*Node, bool) {
 func (node *Node) Append(name string, newNode *Node) {
 	node.Sub.Set(name, newNode)
 }
+
+func (node *Node) Delete(name string) {
+	node.Sub.Delete(name)
+}

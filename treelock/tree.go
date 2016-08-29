@@ -28,24 +28,23 @@ func (tree *Tree) Lock(path string, wait time.Duration) error {
 	if err != nil {
 		return err
 	}
-	p := tree.root
-	for _, v := range ps {
-		p.internalMutex.Lock()
-		next, ok := p.Get(v)
-		if !ok {
-			newNode := NewNode(v)
-			p.Append(v, newNode)
-		}
-		p.internalMutex.Unlock()
-		p = next
-	}
-
 	ch := make(chan int, 0)
 	go func() {
+		p := tree.root
+		for _, v := range ps {
+			p.Mutex.Lock()
+			next, ok := p.Get(v)
+			if !ok {
+				newNode := NewNode(v)
+				p.Append(v, newNode)
+				next = newNode
+			}
+			p.Mutex.Unlock()
+			p = next
+		}
 		p.Mutex.Lock()
 		ch <- 1
 	}()
-
 	select {
 	case <-ch:
 		return nil
@@ -54,9 +53,22 @@ func (tree *Tree) Lock(path string, wait time.Duration) error {
 	}
 }
 
-func (tree *Tree) Unlock(path string) bool {
+func (tree *Tree) Unlock(path string) error {
 
-	return false
+	ps, err := ParseLockPath(path)
+	if err != nil {
+		return err
+	}
+	p := tree.root
+	for _, v := range ps {
+		node, ok := p.Get(v)
+		if !ok {
+			return errors.New("element " + v + " not found")
+		}
+		p = node
+	}
+	p.Mutex.Unlock()
+	return nil
 }
 
 func (tree *Tree) Try(path string) (string, bool) {
